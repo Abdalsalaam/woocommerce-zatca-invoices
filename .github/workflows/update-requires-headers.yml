@@ -85,9 +85,9 @@ jobs:
 
           if [ "$CURRENT_REQUIRES_AT_LEAST" != "$REQUIRES_AT_LEAST" ] || [ "$CURRENT_REQUIRES_PHP" != "$REQUIRES_PHP" ] || [ "$WC_REQUIRES_AT_LEAST" != "$LATEST_RELEASE" ]; then
             echo "Headers are outdated. Updating..."
-            sed -i "s/Requires at least: .*/Requires at least: $REQUIRES_AT_LEAST/" "$EXTENSION_FILE"
-            sed -i "s/Requires PHP: .*/Requires PHP: $REQUIRES_PHP/" "$EXTENSION_FILE"
-            sed -i "s/WC requires at least: .*/WC requires at least: $LATEST_RELEASE/" "$EXTENSION_FILE"
+            sed -i "s#// Requires at least: .*#// Requires at least: $REQUIRES_AT_LEAST#" "$EXTENSION_FILE"
+            sed -i "s#// Requires PHP: .*#// Requires PHP: $REQUIRES_PHP#" "$EXTENSION_FILE"
+            sed -i "s#// WC requires at least: .*#// WC requires at least: $LATEST_RELEASE#" "$EXTENSION_FILE"
 
             echo "File content after updates:"
             cat "$EXTENSION_FILE"
