@@ -12,7 +12,6 @@
  * License URI: https://opensource.org/licenses/MIT
  * Requires at least: 5.6
  * Requires PHP: 7.3
- * WC requires at least: 9.1
  *
  */
 
