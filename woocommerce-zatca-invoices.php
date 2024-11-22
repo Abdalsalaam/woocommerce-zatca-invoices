@@ -10,8 +10,8 @@
  * Domain Path: /languages/
  * License: MIT
  * License URI: https://opensource.org/licenses/MIT
- * Requires at least: 5.6
- * Requires PHP: 7.3
+ * Requires at least: 6.5
+ * Requires PHP: 7.4
  *
  */
 
