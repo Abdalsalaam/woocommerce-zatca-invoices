@@ -30,97 +30,50 @@ jobs:
           echo "Contents of WooCommerce directory:"
           ls -l woocommerce
 
-      # Step 4: Debug Extension File Path and Content
-      - name: Verify Extension File and Log Content
+      # Step 4: Checkout Base Branch
+      - name: Checkout Base Branch
         run: |
-          EXTENSION_FILE="woocommerce-zatca-invoices.php"
-          if [ -f "$EXTENSION_FILE" ]; then
-            echo "Extension file exists: $EXTENSION_FILE"
-            echo "Contents of $EXTENSION_FILE:"
-            cat "$EXTENSION_FILE"
-          else
-            echo "Error: Extension file ($EXTENSION_FILE) not found."
-            exit 1
-          fi
+          git fetch origin
+          git checkout main
+          git pull origin main
 
-      # Step 5: Compare and Update Headers
+      # Step 5: Create a New Branch
+      - name: Create New Branch
+        run: |
+          BRANCH_NAME="update-requires-headers"
+          git checkout -b "$BRANCH_NAME"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
+      # Step 6: Compare and Update Headers
       - name: Compare and Update Headers
         id: compare_and_update
         run: |
-          # Define paths
           WC_CORE_FILE="woocommerce/woocommerce.php"
           EXTENSION_FILE="woocommerce-zatca-invoices.php"
-          BRANCH_NAME="update-requires-headers"
           CHANGES_MADE=false
 
-          # Verify WooCommerce core file exists
-          if [ ! -f "$WC_CORE_FILE" ]; then
-            echo "Error: WooCommerce core file ($WC_CORE_FILE) not found."
-            exit 1
-          fi
-
-          # Extract headers from WooCommerce core file
           REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$WC_CORE_FILE")
           REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$WC_CORE_FILE")
 
-          echo "Extracted headers from WooCommerce core:"
-          echo "  Requires at least: $REQUIRES_AT_LEAST"
-          echo "  Requires PHP: $REQUIRES_PHP"
+          CURRENT_REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$EXTENSION_FILE" || echo "")
+          CURRENT_REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$EXTENSION_FILE" || echo "")
+          WC_REQUIRES_AT_LEAST=$(grep -oP 'WC requires at least: \K[\d.]+' "$EXTENSION_FILE" || echo "")
 
-          # Extract headers from the extension file
-          CURRENT_REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$EXTENSION_FILE" || true)
-          CURRENT_REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$EXTENSION_FILE" || true)
-          WC_REQUIRES_AT_LEAST=$(grep -oP 'WC requires at least: \K[\d.]+' "$EXTENSION_FILE" || true)
-
-          echo "Extracted headers from extension file:"
-          echo "  Requires at least: $CURRENT_REQUIRES_AT_LEAST"
-          echo "  Requires PHP: $CURRENT_REQUIRES_PHP"
-          echo "  WC requires at least: $WC_REQUIRES_AT_LEAST"
-
-          # Ensure extracted values are valid
-          if [ -z "$REQUIRES_AT_LEAST" ] || [ -z "$REQUIRES_PHP" ]; then
-            echo "Error: Could not extract headers from WooCommerce core file."
-            exit 1
-          fi
-
-          if [ -z "$CURRENT_REQUIRES_AT_LEAST" ] || [ -z "$CURRENT_REQUIRES_PHP" ] || [ -z "$WC_REQUIRES_AT_LEAST" ]; then
-            echo "Warning: One or more headers could not be extracted from the extension file."
-          fi
-
-          # Compare headers
           if [ "$CURRENT_REQUIRES_AT_LEAST" != "$REQUIRES_AT_LEAST" ] || [ "$CURRENT_REQUIRES_PHP" != "$REQUIRES_PHP" ] || [ "$WC_REQUIRES_AT_LEAST" != "$LATEST_RELEASE" ]; then
             echo "Headers are outdated. Updating..."
-
-            # Update the headers
             sed -i "s/Requires at least: .*/Requires at least: $REQUIRES_AT_LEAST/" "$EXTENSION_FILE"
             sed -i "s/Requires PHP: .*/Requires PHP: $REQUIRES_PHP/" "$EXTENSION_FILE"
             sed -i "s/WC requires at least: .*/WC requires at least: $LATEST_RELEASE/" "$EXTENSION_FILE"
-
-            # Create a new branch
-            git checkout -b "$BRANCH_NAME"
-
-            # Commit the changes
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
             git add "$EXTENSION_FILE"
             git commit -m "Update Requires headers to match WooCommerce $LATEST_RELEASE"
-
             CHANGES_MADE=true
           else
             echo "Headers are already up to date. No changes needed."
           fi
 
-          # Output the branch name and changes status
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
-      - name: Enable Git Debugging
-        run: |
-          git config --global --add safe.directory /github/workspace
-          git config --global --add safe.directory /__w/woocommerce-zatca-invoices
-          git config --global core.logAllRefUpdates true
-
-      # Step 6: Create Pull Request (Only if Changes Are Made)
+      # Step 7: Create Pull Request (Only if Changes Are Made)
       - name: Create Pull Request
         if: env.CHANGES_MADE == 'true'
         uses: peter-evans/create-pull-request@v5
@@ -134,5 +87,5 @@ jobs:
             - `Requires at least`: $REQUIRES_AT_LEAST
             - `Requires PHP`: $REQUIRES_PHP
             - `WC requires at least`: $LATEST_RELEASE
-            
+
             Please review and merge.
