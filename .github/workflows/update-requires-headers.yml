@@ -46,6 +46,8 @@ jobs:
         run: |
           echo "woocommerce/" >> .gitignore
           echo "woocommerce.zip" >> .gitignore
+          git add .gitignore
+          git commit -m "Add .gitignore to exclude unnecessary files" || echo "No changes to commit"
 
       # Step 7: Checkout Base Branch
       - name: Checkout Base Branch
@@ -105,6 +107,11 @@ jobs:
           echo "REQUIRES_AT_LEAST=$REQUIRES_AT_LEAST" >> $GITHUB_ENV
           echo "REQUIRES_PHP=$REQUIRES_PHP" >> $GITHUB_ENV
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
+
+      # Step 6: Clean Untracked Files
+      - name: Clean Untracked Files
+        run: |
+          git clean -fdx
 
       # Step 10: Push Branch
       - name: Push Branch
