@@ -50,7 +50,7 @@ jobs:
           # Define paths
           WC_CORE_FILE="woocommerce/woocommerce.php"
           EXTENSION_FILE="woocommerce-zatca-invoices.php"
-          BRANCH_NAME="update-requires-headers-$(date +%Y%m%d%H%M%S)"
+          BRANCH_NAME="update-requires-headers"
           CHANGES_MADE=false
 
           # Verify WooCommerce core file exists
@@ -114,6 +114,12 @@ jobs:
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
+      - name: Enable Git Debugging
+        run: |
+          git config --global --add safe.directory /github/workspace
+          git config --global --add safe.directory /__w/woocommerce-zatca-invoices
+          git config --global core.logAllRefUpdates true
+
       # Step 6: Create Pull Request (Only if Changes Are Made)
       - name: Create Pull Request
         if: env.CHANGES_MADE == 'true'
@@ -128,5 +134,5 @@ jobs:
             - `Requires at least`: $REQUIRES_AT_LEAST
             - `Requires PHP`: $REQUIRES_PHP
             - `WC requires at least`: $LATEST_RELEASE
-
+            
             Please review and merge.
