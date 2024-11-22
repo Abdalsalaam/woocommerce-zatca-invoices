@@ -30,21 +30,27 @@ jobs:
           echo "Contents of WooCommerce directory:"
           ls -l woocommerce
 
-      # Step 4: Checkout Base Branch
+      # Step 4: Configure Git Author Identity
+      - name: Configure Git Author
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      # Step 5: Checkout Base Branch
       - name: Checkout Base Branch
         run: |
           git fetch origin
-          git checkout main
+          git checkout main # Replace 'main' with your default branch name
           git pull origin main
 
-      # Step 5: Create a New Branch
+      # Step 6: Create a New Branch
       - name: Create New Branch
         run: |
-          BRANCH_NAME="update-requires-headers"
+          BRANCH_NAME="update-requires-headers-$(date +%Y%m%d%H%M%S)-$RANDOM"
           git checkout -b "$BRANCH_NAME"
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
-      # Step 6: Compare and Update Headers
+      # Step 7: Compare and Update Headers
       - name: Compare and Update Headers
         id: compare_and_update
         run: |
@@ -73,7 +79,7 @@ jobs:
 
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
-      # Step 7: Create Pull Request (Only if Changes Are Made)
+      # Step 8: Create Pull Request (Only if Changes Are Made)
       - name: Create Pull Request
         if: env.CHANGES_MADE == 'true'
         uses: peter-evans/create-pull-request@v5
