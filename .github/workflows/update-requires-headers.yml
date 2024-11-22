@@ -42,11 +42,6 @@ jobs:
           git add .gitignore
           git commit -m "Add .gitignore to exclude unnecessary files" || echo "No changes to commit"
 
-      # Step 6: Clean Untracked Files
-      - name: Clean Untracked Files
-        run: |
-          git clean -fdx
-
       # Step 7: Checkout Base Branch
       - name: Checkout Base Branch
         run: |
@@ -89,6 +84,10 @@ jobs:
           fi
 
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
+      # Step 6: Clean Untracked Files
+      - name: Clean Untracked Files
+        run: |
+          git clean -fdx
 
       # Step 10: Create Pull Request (Only if Changes Are Made)
       - name: Create Pull Request
