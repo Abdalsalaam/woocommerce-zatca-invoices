@@ -30,14 +30,25 @@ jobs:
           echo "Contents of WooCommerce directory:"
           ls -l woocommerce
 
-      # Step 4: Compare and Update Headers
+      # Step 4: Debug Extension File Path
+      - name: Verify Extension File
+        run: |
+          EXTENSION_FILE="woocommerce-zatca-invoices.php"
+          if [ -f "$EXTENSION_FILE" ]; then
+            echo "Extension file exists: $EXTENSION_FILE"
+          else
+            echo "Error: Extension file ($EXTENSION_FILE) not found."
+            exit 1
+          fi
+
+      # Step 5: Compare and Update Headers
       - name: Compare and Update Headers
         id: compare_and_update
         run: |
           # Define paths
           WC_CORE_FILE="woocommerce/woocommerce.php"
           EXTENSION_FILE="woocommerce-zatca-invoices.php"
-          BRANCH_NAME="update-requires-headers"
+          BRANCH_NAME="update-requires-headers-$(date +%Y%m%d%H%M%S)"
           CHANGES_MADE=false
 
           # Verify WooCommerce core file exists
@@ -46,34 +57,34 @@ jobs:
             exit 1
           fi
 
-          # Verify the extension file exists
-          if [ ! -f "$EXTENSION_FILE" ]; then
-            echo "Error: Extension file ($EXTENSION_FILE) not found."
-            exit 1
-          fi
-
           # Extract headers from WooCommerce core file
           REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$WC_CORE_FILE")
           REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$WC_CORE_FILE")
 
+          echo "Extracted headers from WooCommerce core:"
+          echo "  Requires at least: $REQUIRES_AT_LEAST"
+          echo "  Requires PHP: $REQUIRES_PHP"
+
+          # Extract headers from the extension file
+          CURRENT_REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$EXTENSION_FILE" || echo "Not found")
+          CURRENT_REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$EXTENSION_FILE" || echo "Not found")
+          WC_REQUIRES_AT_LEAST=$(grep -oP 'WC requires at least: \K[\d.]+' "$EXTENSION_FILE" || echo "Not found")
+
+          echo "Extracted headers from extension file:"
+          echo "  Requires at least: $CURRENT_REQUIRES_AT_LEAST"
+          echo "  Requires PHP: $CURRENT_REQUIRES_PHP"
+          echo "  WC requires at least: $WC_REQUIRES_AT_LEAST"
+
+          # Ensure extracted values are valid
           if [ -z "$REQUIRES_AT_LEAST" ] || [ -z "$REQUIRES_PHP" ]; then
             echo "Error: Could not extract headers from WooCommerce core file."
             exit 1
           fi
 
-          echo "Extracted from WooCommerce core:"
-          echo "  Requires at least: $REQUIRES_AT_LEAST"
-          echo "  Requires PHP: $REQUIRES_PHP"
-
-          # Extract headers from the extension file
-          CURRENT_REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$EXTENSION_FILE")
-          CURRENT_REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$EXTENSION_FILE")
-          WC_REQUIRES_AT_LEAST=$(grep -oP 'WC requires at least: \K[\d.]+' "$EXTENSION_FILE")
-
-          echo "Extracted from extension file:"
-          echo "  Requires at least: $CURRENT_REQUIRES_AT_LEAST"
-          echo "  Requires PHP: $CURRENT_REQUIRES_PHP"
-          echo "  WC requires at least: $WC_REQUIRES_AT_LEAST"
+          if [ "$CURRENT_REQUIRES_AT_LEAST" = "Not found" ] || [ "$CURRENT_REQUIRES_PHP" = "Not found" ] || [ "$WC_REQUIRES_AT_LEAST" = "Not found" ]; then
+            echo "Error: Could not extract headers from the extension file."
+            exit 1
+          fi
 
           # Compare headers
           if [ "$CURRENT_REQUIRES_AT_LEAST" != "$REQUIRES_AT_LEAST" ] || [ "$CURRENT_REQUIRES_PHP" != "$REQUIRES_PHP" ] || [ "$WC_REQUIRES_AT_LEAST" != "$LATEST_RELEASE" ]; then
@@ -102,7 +113,7 @@ jobs:
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
-      # Step 5: Create Pull Request (Only if Changes Are Made)
+      # Step 6: Create Pull Request (Only if Changes Are Made)
       - name: Create Pull Request
         if: env.CHANGES_MADE == 'true'
         uses: peter-evans/create-pull-request@v5
