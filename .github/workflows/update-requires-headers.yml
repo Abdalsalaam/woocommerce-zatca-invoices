@@ -27,8 +27,6 @@ jobs:
       - name: Unzip WooCommerce Release
         run: |
           unzip -q woocommerce.zip
-          echo "Contents of WooCommerce directory:"
-          ls -l woocommerce
 
       # Step 4: Configure Git Author Identity
       - name: Configure Git Author
@@ -48,8 +46,8 @@ jobs:
       - name: Checkout Base Branch
         run: |
           git fetch origin
-          git checkout main # Replace 'main' with your default branch name
-          git reset --hard origin/main # Force sync with the remote main branch
+          git checkout main
+          git pull origin main
 
       # Step 8: Create a New Branch
       - name: Create New Branch
@@ -66,6 +64,9 @@ jobs:
           EXTENSION_FILE="woocommerce-zatca-invoices.php"
           CHANGES_MADE=false
 
+          echo "File content before updates:"
+          cat "$EXTENSION_FILE"
+
           REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$WC_CORE_FILE")
           REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$WC_CORE_FILE")
 
@@ -73,11 +74,24 @@ jobs:
           CURRENT_REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$EXTENSION_FILE" || echo "")
           WC_REQUIRES_AT_LEAST=$(grep -oP 'WC requires at least: \K[\d.]+' "$EXTENSION_FILE" || echo "")
 
+          echo "Extracted headers from WooCommerce core:"
+          echo "  Requires at least: $REQUIRES_AT_LEAST"
+          echo "  Requires PHP: $REQUIRES_PHP"
+
+          echo "Extracted headers from extension file:"
+          echo "  Requires at least: $CURRENT_REQUIRES_AT_LEAST"
+          echo "  Requires PHP: $CURRENT_REQUIRES_PHP"
+          echo "  WC requires at least: $WC_REQUIRES_AT_LEAST"
+
           if [ "$CURRENT_REQUIRES_AT_LEAST" != "$REQUIRES_AT_LEAST" ] || [ "$CURRENT_REQUIRES_PHP" != "$REQUIRES_PHP" ] || [ "$WC_REQUIRES_AT_LEAST" != "$LATEST_RELEASE" ]; then
             echo "Headers are outdated. Updating..."
             sed -i "s/Requires at least: .*/Requires at least: $REQUIRES_AT_LEAST/" "$EXTENSION_FILE"
             sed -i "s/Requires PHP: .*/Requires PHP: $REQUIRES_PHP/" "$EXTENSION_FILE"
             sed -i "s/WC requires at least: .*/WC requires at least: $LATEST_RELEASE/" "$EXTENSION_FILE"
+
+            echo "File content after updates:"
+            cat "$EXTENSION_FILE"
+
             git add "$EXTENSION_FILE"
             git commit -m "Update Requires headers to match WooCommerce $LATEST_RELEASE" || echo "No changes to commit"
             CHANGES_MADE=true
@@ -87,26 +101,25 @@ jobs:
 
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
-      # Debug Changes
-      - name: Show Staged Changes
+      # Step 6: Clean Untracked Files
+      - name: Clean Untracked Files
         run: |
-          git status
-          git diff --cached
+          git clean -fdx
 
       # Step 10: Push Branch
       - name: Push Branch
         if: env.CHANGES_MADE == 'true'
         run: |
-          git push --force --set-upstream origin ${{ env.BRANCH_NAME }}
+          git push --set-upstream origin ${{ env.BRANCH_NAME }}
 
-      # Step 11: Create Pull Request (Only if Changes Are Made)
+      # Step 10: Create Pull Request (Only if Changes Are Made)
       - name: Create Pull Request
         if: env.CHANGES_MADE == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ env.BRANCH_NAME }}
-          base: main
+          base: main # Set the base branch to 'main' or your default branch
           commit-message: "Update Requires headers"
           title: "Update Requires headers for WooCommerce compatibility"
           body: |
