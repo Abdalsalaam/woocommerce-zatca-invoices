@@ -2,17 +2,19 @@ name: Update Requires Headers
 
 on:
   schedule:
-    - cron: '0 0 * * 1' # Runs every Monday
-  workflow_dispatch:
+    - cron: '0 0 * * 1' # Run every Monday at midnight UTC
+  workflow_dispatch: # Allow manual trigger
 
 jobs:
   update-headers:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout the repository
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      # Step 2: Fetch the latest WooCommerce release
       - name: Fetch Latest WooCommerce Release
         id: fetch_wc_release
         run: |
@@ -21,40 +23,67 @@ jobs:
           echo "LATEST_RELEASE=$LATEST_RELEASE" >> $GITHUB_ENV
           curl -L -o woocommerce.zip "https://github.com/woocommerce/woocommerce/releases/download/$LATEST_RELEASE/woocommerce.zip"
 
+      # Step 3: Unzip the WooCommerce release
       - name: Unzip WooCommerce Release
         run: |
-          unzip -q woocommerce.zip
+          mkdir -p woocommerce
+          unzip -q woocommerce.zip -d woocommerce
+          echo "Contents of WooCommerce directory:"
+          ls -l woocommerce
 
-      - name: Extract WooCommerce Headers
-        id: extract_headers
-        run: |
-          REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' woocommerce/readme.txt)
-          REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' woocommerce/readme.txt)
-          echo "Requires at least: $REQUIRES_AT_LEAST"
-          echo "Requires PHP: $REQUIRES_PHP"
-          echo "REQUIRES_AT_LEAST=$REQUIRES_AT_LEAST" >> $GITHUB_ENV
-          echo "REQUIRES_PHP=$REQUIRES_PHP" >> $GITHUB_ENV
-
+      # Step 4: Compare and Update Headers
       - name: Compare and Update Headers
         id: compare_and_update
         run: |
-          EXTENSION_README=readme.txt
-          BRANCH_NAME="update-requires-headers-$(date +%Y%m%d%H%M%S)"
+          # Define paths
+          WC_CORE_FILE="woocommerce/woocommerce.php"
+          EXTENSION_FILE="woocommerce-zatca-invoices.php"
+          BRANCH_NAME="update-requires-headers"
           CHANGES_MADE=false
 
-          # Extract current headers from the extension
-          WC_REQUIRES_AT_LEAST=$(grep -oP 'WC requires at least: \K[\d.]+' "$EXTENSION_README")
-          CURRENT_REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$EXTENSION_README")
-          CURRENT_REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$EXTENSION_README")
+          # Verify WooCommerce core file exists
+          if [ ! -f "$WC_CORE_FILE" ]; then
+            echo "Error: WooCommerce core file ($WC_CORE_FILE) not found."
+            exit 1
+          fi
 
-          # Compare with WooCommerce headers
+          # Verify the extension file exists
+          if [ ! -f "$EXTENSION_FILE" ]; then
+            echo "Error: Extension file ($EXTENSION_FILE) not found."
+            exit 1
+          fi
+
+          # Extract headers from WooCommerce core file
+          REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$WC_CORE_FILE")
+          REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$WC_CORE_FILE")
+
+          if [ -z "$REQUIRES_AT_LEAST" ] || [ -z "$REQUIRES_PHP" ]; then
+            echo "Error: Could not extract headers from WooCommerce core file."
+            exit 1
+          fi
+
+          echo "Extracted from WooCommerce core:"
+          echo "  Requires at least: $REQUIRES_AT_LEAST"
+          echo "  Requires PHP: $REQUIRES_PHP"
+
+          # Extract headers from the extension file
+          CURRENT_REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$EXTENSION_FILE")
+          CURRENT_REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$EXTENSION_FILE")
+          WC_REQUIRES_AT_LEAST=$(grep -oP 'WC requires at least: \K[\d.]+' "$EXTENSION_FILE")
+
+          echo "Extracted from extension file:"
+          echo "  Requires at least: $CURRENT_REQUIRES_AT_LEAST"
+          echo "  Requires PHP: $CURRENT_REQUIRES_PHP"
+          echo "  WC requires at least: $WC_REQUIRES_AT_LEAST"
+
+          # Compare headers
           if [ "$CURRENT_REQUIRES_AT_LEAST" != "$REQUIRES_AT_LEAST" ] || [ "$CURRENT_REQUIRES_PHP" != "$REQUIRES_PHP" ] || [ "$WC_REQUIRES_AT_LEAST" != "$LATEST_RELEASE" ]; then
             echo "Headers are outdated. Updating..."
 
             # Update the headers
-            sed -i "s/Requires at least: .*/Requires at least: $REQUIRES_AT_LEAST/" "$EXTENSION_README"
-            sed -i "s/Requires PHP: .*/Requires PHP: $REQUIRES_PHP/" "$EXTENSION_README"
-            sed -i "s/WC requires at least: .*/WC requires at least: $LATEST_RELEASE/" "$EXTENSION_README"
+            sed -i "s/Requires at least: .*/Requires at least: $REQUIRES_AT_LEAST/" "$EXTENSION_FILE"
+            sed -i "s/Requires PHP: .*/Requires PHP: $REQUIRES_PHP/" "$EXTENSION_FILE"
+            sed -i "s/WC requires at least: .*/WC requires at least: $LATEST_RELEASE/" "$EXTENSION_FILE"
 
             # Create a new branch
             git checkout -b "$BRANCH_NAME"
@@ -62,7 +91,7 @@ jobs:
             # Commit the changes
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add "$EXTENSION_README"
+            git add "$EXTENSION_FILE"
             git commit -m "Update Requires headers to match WooCommerce $LATEST_RELEASE"
 
             CHANGES_MADE=true
@@ -74,12 +103,13 @@ jobs:
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
+      # Step 5: Create Pull Request (Only if Changes Are Made)
       - name: Create Pull Request
         if: env.CHANGES_MADE == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ env.BRANCH_NAME }} # Use the branch created earlier
+          branch: ${{ env.BRANCH_NAME }}
           commit-message: "Update Requires headers"
           title: "Update Requires headers for WooCommerce compatibility"
           body: |
