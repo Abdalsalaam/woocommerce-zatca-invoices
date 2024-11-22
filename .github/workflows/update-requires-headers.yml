@@ -27,6 +27,8 @@ jobs:
       - name: Unzip WooCommerce Release
         run: |
           unzip -q woocommerce.zip
+          echo "Contents of WooCommerce directory:"
+          ls -l woocommerce
 
       # Step 4: Configure Git Author Identity
       - name: Configure Git Author
@@ -47,7 +49,7 @@ jobs:
         run: |
           git fetch origin
           git checkout main # Replace 'main' with your default branch name
-          git pull origin main
+          git reset --hard origin/main # Force sync with the remote main branch
 
       # Step 8: Create a New Branch
       - name: Create New Branch
@@ -84,25 +86,27 @@ jobs:
           fi
 
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
-      # Step 6: Clean Untracked Files
-      - name: Clean Untracked Files
+
+      # Debug Changes
+      - name: Show Staged Changes
         run: |
-          git clean -fdx
+          git status
+          git diff --cached
 
       # Step 10: Push Branch
       - name: Push Branch
         if: env.CHANGES_MADE == 'true'
         run: |
-          git push --set-upstream origin ${{ env.BRANCH_NAME }}
+          git push --force --set-upstream origin ${{ env.BRANCH_NAME }}
 
-      # Step 10: Create Pull Request (Only if Changes Are Made)
+      # Step 11: Create Pull Request (Only if Changes Are Made)
       - name: Create Pull Request
         if: env.CHANGES_MADE == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ env.BRANCH_NAME }}
-          base: main # Set the base branch to 'main' or your default branch
+          base: main
           commit-message: "Update Requires headers"
           title: "Update Requires headers for WooCommerce compatibility"
           body: |
