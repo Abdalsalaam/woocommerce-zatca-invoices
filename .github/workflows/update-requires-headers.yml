@@ -89,6 +89,12 @@ jobs:
         run: |
           git clean -fdx
 
+      # Step 10: Push Branch
+      - name: Push Branch
+        if: env.CHANGES_MADE == 'true'
+        run: |
+          git push --set-upstream origin ${{ env.BRANCH_NAME }}
+
       # Step 10: Create Pull Request (Only if Changes Are Made)
       - name: Create Pull Request
         if: env.CHANGES_MADE == 'true'
