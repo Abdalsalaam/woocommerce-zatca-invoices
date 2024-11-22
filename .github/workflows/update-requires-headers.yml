@@ -23,8 +23,7 @@ jobs:
 
       - name: Unzip WooCommerce Release
         run: |
-          mkdir woocommerce
-          unzip -q woocommerce.zip -d woocommerce
+          unzip -q woocommerce.zip
 
       - name: Extract WooCommerce Headers
         id: extract_headers
