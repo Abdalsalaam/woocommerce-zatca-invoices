@@ -27,8 +27,6 @@ jobs:
       - name: Unzip WooCommerce Release
         run: |
           unzip -q woocommerce.zip
-          echo "Contents of WooCommerce directory:"
-          ls -l woocommerce
 
       # Step 4: Configure Git Author Identity
       - name: Configure Git Author
@@ -36,21 +34,34 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      # Step 5: Checkout Base Branch
+      # Step 5: Ignore Unwanted Files
+      - name: Ignore Unwanted Files
+        run: |
+          echo "woocommerce/" >> .gitignore
+          echo "woocommerce.zip" >> .gitignore
+          git add .gitignore
+          git commit -m "Add .gitignore to exclude unnecessary files" || echo "No changes to commit"
+
+      # Step 6: Clean Untracked Files
+      - name: Clean Untracked Files
+        run: |
+          git clean -fdx
+
+      # Step 7: Checkout Base Branch
       - name: Checkout Base Branch
         run: |
           git fetch origin
           git checkout main # Replace 'main' with your default branch name
           git pull origin main
 
-      # Step 6: Create a New Branch
+      # Step 8: Create a New Branch
       - name: Create New Branch
         run: |
           BRANCH_NAME="update-requires-headers-$(date +%Y%m%d%H%M%S)-$RANDOM"
           git checkout -b "$BRANCH_NAME"
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
-      # Step 7: Compare and Update Headers
+      # Step 9: Compare and Update Headers
       - name: Compare and Update Headers
         id: compare_and_update
         run: |
@@ -71,7 +82,7 @@ jobs:
             sed -i "s/Requires PHP: .*/Requires PHP: $REQUIRES_PHP/" "$EXTENSION_FILE"
             sed -i "s/WC requires at least: .*/WC requires at least: $LATEST_RELEASE/" "$EXTENSION_FILE"
             git add "$EXTENSION_FILE"
-            git commit -m "Update Requires headers to match WooCommerce $LATEST_RELEASE"
+            git commit -m "Update Requires headers to match WooCommerce $LATEST_RELEASE" || echo "No changes to commit"
             CHANGES_MADE=true
           else
             echo "Headers are already up to date. No changes needed."
@@ -79,14 +90,14 @@ jobs:
 
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
-      # Step 8: Create Pull Request (Only if Changes Are Made)
+      # Step 10: Create Pull Request (Only if Changes Are Made)
       - name: Create Pull Request
         if: env.CHANGES_MADE == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ env.BRANCH_NAME }}
-          base: main
+          base: main # Set the base branch to 'main' or your default branch
           commit-message: "Update Requires headers"
           title: "Update Requires headers for WooCommerce compatibility"
           body: |
