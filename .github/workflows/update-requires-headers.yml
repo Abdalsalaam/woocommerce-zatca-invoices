@@ -19,8 +19,11 @@ jobs:
         id: fetch_wc_release
         run: |
           LATEST_RELEASE=$(curl -s https://api.github.com/repos/woocommerce/woocommerce/releases/latest | jq -r '.tag_name')
+          LATEST_MINOR_RELEASE=$(echo "$LATEST_RELEASE" | grep -oE '^[0-9]+\.[0-9]+')
           echo "Latest WooCommerce Release: $LATEST_RELEASE"
+          echo "Latest Minor Release: $LATEST_MINOR_RELEASE"
           echo "LATEST_RELEASE=$LATEST_RELEASE" >> $GITHUB_ENV
+          echo "LATEST_MINOR_RELEASE=$LATEST_MINOR_RELEASE" >> $GITHUB_ENV
           curl -L -o woocommerce.zip "https://github.com/woocommerce/woocommerce/releases/download/$LATEST_RELEASE/woocommerce.zip"
 
       # Step 3: Unzip the WooCommerce release
@@ -83,11 +86,11 @@ jobs:
           echo "  Requires PHP: $CURRENT_REQUIRES_PHP"
           echo "  WC requires at least: $WC_REQUIRES_AT_LEAST"
 
-          if [ "$CURRENT_REQUIRES_AT_LEAST" != "$REQUIRES_AT_LEAST" ] || [ "$CURRENT_REQUIRES_PHP" != "$REQUIRES_PHP" ] || [ "$WC_REQUIRES_AT_LEAST" != "$LATEST_RELEASE" ]; then
+          if [ "$CURRENT_REQUIRES_AT_LEAST" != "$REQUIRES_AT_LEAST" ] || [ "$CURRENT_REQUIRES_PHP" != "$REQUIRES_PHP" ] || [ "$WC_REQUIRES_AT_LEAST" != "$LATEST_MINOR_RELEASE" ]; then
             echo "Headers are outdated. Updating..."
             sed -i "s#\* Requires at least: .*#* Requires at least: $REQUIRES_AT_LEAST#" "$EXTENSION_FILE"
             sed -i "s#\* Requires PHP: .*#* Requires PHP: $REQUIRES_PHP#" "$EXTENSION_FILE"
-            sed -i "s#\* WC requires at least: .*#* WC requires at least: $LATEST_RELEASE#" "$EXTENSION_FILE"                                     
+            sed -i "s#\* WC requires at least: .*#* WC requires at least: $LATEST_MINOR_RELEASE#" "$EXTENSION_FILE"                                    
                                      
                                      echo "File content after updates:"
             cat "$EXTENSION_FILE"
