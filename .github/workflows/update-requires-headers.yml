@@ -52,7 +52,7 @@ jobs:
       # Step 8: Create a New Branch
       - name: Create New Branch
         run: |
-          BRANCH_NAME="update-requires-headers-$(date +%Y%m%d%H%M%S)-$RANDOM"
+          BRANCH_NAME="tweak/update-requires-headers-$LATEST_RELEASE"
           git checkout -b "$BRANCH_NAME"
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
@@ -122,8 +122,8 @@ jobs:
           title: "Update Requires headers for WooCommerce compatibility"
           body: |
             This PR updates the following headers to ensure compatibility with the latest WooCommerce release:
-            - `Requires at least`: $REQUIRES_AT_LEAST
-            - `Requires PHP`: $REQUIRES_PHP
-            - `WC requires at least`: $LATEST_RELEASE
+            - `Requires at least`: ${{ env.REQUIRES_AT_LEAST }}
+            - `Requires PHP`: ${{ env.REQUIRES_PHP }}
+            - `WC requires at least`: ${{ env.LATEST_RELEASE }}
 
             Please review and merge.
