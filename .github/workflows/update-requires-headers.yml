@@ -100,6 +100,8 @@ jobs:
             echo "Headers are already up to date. No changes needed."
           fi
 
+          echo "REQUIRES_AT_LEAST=$REQUIRES_AT_LEAST" >> $GITHUB_ENV
+          echo "REQUIRES_PHP=$REQUIRES_PHP" >> $GITHUB_ENV
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
       # Step 6: Clean Untracked Files
@@ -127,6 +129,6 @@ jobs:
             This PR updates the following headers to ensure compatibility with the latest WooCommerce release:
             - `Requires at least`: ${{ env.REQUIRES_AT_LEAST }}
             - `Requires PHP`: ${{ env.REQUIRES_PHP }}
-            - `WC requires at least`: ${{ env.LATEST_RELEASE }}
+            - `WC requires at least`: ${{ env.LATEST_MINOR_RELEASE }}
 
             Please review and merge.
