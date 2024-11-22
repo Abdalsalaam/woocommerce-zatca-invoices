@@ -10,9 +10,9 @@
  * Domain Path: /languages/
  * License: MIT
  * License URI: https://opensource.org/licenses/MIT
- * Requires at least: 5.6
- * Requires PHP: 7.3
- * WC requires at least: 9.1
+ * Requires at least: 6.5
+ * Requires PHP: 7.4
+ * WC requires at least: 9.4
  * WC tested up to: 9.2
  *
  */
