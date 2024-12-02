@@ -1,3 +1,5 @@
+* WC requires at least: 9.2
+* Requires at least: 6.5
 <?php
 /**
  * Plugin Name: ZATCA QR Invoice for WooCommerce
@@ -10,7 +12,7 @@
  * Domain Path: /languages/
  * License: MIT
  * License URI: https://opensource.org/licenses/MIT
- * Requires PHP: 7.2
+* Requires PHP: 7.4
  *
  */
 
