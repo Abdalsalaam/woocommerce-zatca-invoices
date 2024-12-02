@@ -62,53 +62,35 @@ jobs:
           REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$WC_CORE_FILE")
           LATEST_MINOR_RELEASE=$(echo "$LATEST_RELEASE" | grep -oE '^[0-9]+\.[0-9]+' | awk -F. '{printf("%d.%d", $1, $2-2 < 0 ? 0 : $2-2)}')
 
-          # Check for missing headers and add them if needed
-          if ! grep -qE "^\s*\* Requires at least:\s*"; then
+                    # Check and update or add the 'Requires at least' header
+          if grep -qE "^\s*\* Requires at least:" "$EXTENSION_FILE"; then
+            echo "Updating 'Requires at least' header."
+            sed -i "s#^\s*\* Requires at least:.*#\* Requires at least: $REQUIRES_AT_LEAST#" "$EXTENSION_FILE"
+          else
             echo "Adding missing 'Requires at least' header."
             sed -i "1s/^/\* Requires at least: $REQUIRES_AT_LEAST\n/" "$EXTENSION_FILE"
-            CHANGES_MADE=true
           fi
+          CHANGES_MADE=true
 
-          if ! grep -qE "^\s*\* Requires PHP:\s*"; then
+          # Check and update or add the 'Requires PHP' header
+          if grep -qE "^\s*\* Requires PHP:" "$EXTENSION_FILE"; then
+            echo "Updating 'Requires PHP' header."
+            sed -i "s#^\s*\* Requires PHP:.*#\* Requires PHP: $REQUIRES_PHP#" "$EXTENSION_FILE"
+          else
             echo "Adding missing 'Requires PHP' header."
             sed -i "1s/^/\* Requires PHP: $REQUIRES_PHP\n/" "$EXTENSION_FILE"
-            CHANGES_MADE=true
           fi
+          CHANGES_MADE=true
 
-          if ! grep -qE "^\s*\* WC requires at least:\s*"; then
+          # Check and update or add the 'WC requires at least' header
+          if grep -qE "^\s*\* WC requires at least:" "$EXTENSION_FILE"; then
+            echo "Updating 'WC requires at least' header."
+            sed -i "s#^\s*\* WC requires at least:.*#\* WC requires at least: $LATEST_MINOR_RELEASE#" "$EXTENSION_FILE"
+          else
             echo "Adding missing 'WC requires at least' header."
             sed -i "1s/^/\* WC requires at least: $LATEST_MINOR_RELEASE\n/" "$EXTENSION_FILE"
-            CHANGES_MADE=true
           fi
-
-          # Compare and update existing headers
-          CURRENT_REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$EXTENSION_FILE" || echo "")
-          CURRENT_REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$EXTENSION_FILE" || echo "")
-          WC_REQUIRES_AT_LEAST=$(grep -oP 'WC requires at least: \K[\d.]+' "$EXTENSION_FILE" || echo "")
-
-          if [ "$CURRENT_REQUIRES_AT_LEAST" != "$REQUIRES_AT_LEAST" ]; then
-            echo "Updating 'Requires at least' header."
-            sed -i "s#\* Requires at least: .*#* Requires at least: $REQUIRES_AT_LEAST#" "$EXTENSION_FILE"
-            CHANGES_MADE=true
-          fi
-
-          if [ "$CURRENT_REQUIRES_PHP" != "$REQUIRES_PHP" ]; then
-            echo "Updating 'Requires PHP' header."
-            sed -i "s#\* Requires PHP: .*#* Requires PHP: $REQUIRES_PHP#" "$EXTENSION_FILE"
-            CHANGES_MADE=true
-          fi
-
-          if [ "$WC_REQUIRES_AT_LEAST" != "$LATEST_MINOR_RELEASE" ]; then
-            echo "Updating 'WC requires at least' header."
-            sed -i "s#\* WC requires at least: .*#* WC requires at least: $LATEST_MINOR_RELEASE#" "$EXTENSION_FILE"
-            CHANGES_MADE=true
-          fi
-
-          # Commit changes if any
-          if [ "$CHANGES_MADE" = true ]; then
-            git add "$EXTENSION_FILE"
-            git commit -m "Update Requires headers to match WooCommerce $LATEST_RELEASE" || echo "No changes to commit"
-          fi
+          CHANGES_MADE=true
 
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
