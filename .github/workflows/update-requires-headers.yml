@@ -18,52 +18,34 @@ jobs:
       - name: Fetch Latest WooCommerce Release
         id: fetch_wc_release
         run: |
+          # Get the latest release version
           LATEST_RELEASE=$(curl -s https://api.github.com/repos/woocommerce/woocommerce/releases/latest | jq -r '.tag_name')
           MAJOR_VERSION=$(echo "$LATEST_RELEASE" | grep -oE '^[0-9]+')
           MINOR_VERSION=$(echo "$LATEST_RELEASE" | grep -oE '^[0-9]+\.[0-9]+' | cut -d. -f2)
           ADJUSTED_MINOR_VERSION=$((MINOR_VERSION - 2))
+
+          # Handle edge case: minor version < 0
+          if [ "$ADJUSTED_MINOR_VERSION" -lt 0 ]; then
+            ADJUSTED_MINOR_VERSION=0
+          fi
+
+          # Create the adjusted version
           LATEST_MINOR_RELEASE="$MAJOR_VERSION.$ADJUSTED_MINOR_VERSION"
 
           echo "Latest WooCommerce Release: $LATEST_RELEASE"
-          echo "Latest Minor Release: $LATEST_MINOR_RELEASE"
+          echo "Adjusted Minor Release: $LATEST_MINOR_RELEASE"
+
           echo "LATEST_RELEASE=$LATEST_RELEASE" >> $GITHUB_ENV
           echo "LATEST_MINOR_RELEASE=$LATEST_MINOR_RELEASE" >> $GITHUB_ENV
-          curl -L -o woocommerce.zip "https://github.com/woocommerce/woocommerce/releases/download/$LATEST_RELEASE/woocommerce.zip"
 
-      # Step 3: Unzip the WooCommerce release
-      - name: Unzip WooCommerce Release
+      # Step 3: Create and Checkout a New Branch
+      - name: Create and Checkout Branch
         run: |
-          unzip -q woocommerce.zip
-
-      # Step 4: Configure Git Author Identity
-      - name: Configure Git Author
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      # Step 5: Ignore Unwanted Files
-      - name: Ignore Unwanted Files
-        run: |
-          echo "woocommerce/" >> .gitignore
-          echo "woocommerce.zip" >> .gitignore
-          git add .gitignore
-          git commit -m "Add .gitignore to exclude unnecessary files"
-
-      # Step 7: Checkout Base Branch
-      - name: Checkout Base Branch
-        run: |
-          git fetch origin
-          git checkout main
-          git pull origin main
-
-      # Step 8: Create a New Branch
-      - name: Create New Branch
-        run: |
-          BRANCH_NAME="tweak/update-requires-headers-$LATEST_RELEASE"
+          BRANCH_NAME="tweak/update-requires-headers-${{ env.LATEST_RELEASE }}"
           git checkout -b "$BRANCH_NAME"
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
-      # Step 9: Compare and Update Headers
+      # Step 4: Compare and Update Headers
       - name: Compare and Update Headers
         id: compare_and_update
         run: |
@@ -71,7 +53,6 @@ jobs:
           EXTENSION_FILE="woocommerce-zatca-invoices.php"
           CHANGES_MADE=false
 
-          # Extract values from WooCommerce core
           REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$WC_CORE_FILE")
           REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$WC_CORE_FILE")
           LATEST_MINOR_RELEASE=$(echo "$LATEST_RELEASE" | grep -oE '^[0-9]+\.[0-9]+' | awk -F. '{printf("%d.%d", $1, $2-2 < 0 ? 0 : $2-2)}')
@@ -126,25 +107,20 @@ jobs:
 
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
-      # Step 6: Clean Untracked Files
-      - name: Clean Untracked Files
-        run: |
-          git clean -fdx
-
-      # Step 10: Push Branch
+      # Step 5: Push Branch
       - name: Push Branch
         if: env.CHANGES_MADE == 'true'
         run: |
-          git push --force --set-upstream origin ${{ env.BRANCH_NAME }}
+          git push --set-upstream origin ${{ env.BRANCH_NAME }}
 
-      # Step 10: Create Pull Request (Only if Changes Are Made)
+      # Step 6: Create Pull Request
       - name: Create Pull Request
         if: env.CHANGES_MADE == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ env.BRANCH_NAME }}
-          base: main # Set the base branch to 'main' or your default branch
+          base: main
           commit-message: "Update Requires headers"
           title: "Update Requires headers for WooCommerce compatibility"
           body: |
