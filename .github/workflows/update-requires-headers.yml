@@ -61,6 +61,8 @@ jobs:
           REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$WC_CORE_FILE")
           REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$WC_CORE_FILE")
           LATEST_MINOR_RELEASE=$(echo "$LATEST_RELEASE" | grep -oE '^[0-9]+\.[0-9]+' | awk -F. '{printf("%d.%d", $1, $2-2 < 0 ? 0 : $2-2)}')
+          echo "REQUIRES_AT_LEAST=$REQUIRES_AT_LEAST" >> $GITHUB_ENV
+          echo "REQUIRES_PHP=$REQUIRES_PHP" >> $GITHUB_ENV
 
                     # Check and update or add the 'Requires at least' header
           if grep -qE "^\s*\* Requires at least:" "$EXTENSION_FILE"; then
