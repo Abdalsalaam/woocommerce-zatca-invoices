@@ -24,7 +24,6 @@ jobs:
           curl -L -o woocommerce.zip "https://github.com/woocommerce/woocommerce/releases/download/$LATEST_RELEASE/woocommerce.zip"
 
           # Unzip WooCommerce release
-          mkdir -p woocommerce
           unzip -q woocommerce.zip
 
           # Extract minor version for WC requires at least
@@ -112,6 +111,15 @@ jobs:
           fi
 
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
+
+      # Step 5: Ignore Unwanted Files
+      - name: Ignore Unwanted Files
+        run: |
+          echo "woocommerce/" >> .gitignore
+          echo "woocommerce.zip" >> .gitignore
+          git add .gitignore
+          git commit -m "Add .gitignore to exclude unnecessary files" || echo "No changes to commit"
+          git clean -fdx
 
       # Step 5: Push Branch
       - name: Push Branch
