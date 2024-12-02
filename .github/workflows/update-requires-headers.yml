@@ -68,7 +68,7 @@ jobs:
             sed -i "s#^\s*\* Requires at least:.*#\* Requires at least: $REQUIRES_AT_LEAST#" "$EXTENSION_FILE"
           else
             echo "Adding missing 'Requires at least' header."
-            sed -i "1s/^/\* Requires at least: $REQUIRES_AT_LEAST\n/" "$EXTENSION_FILE"
+            sed -i "/^\s*\* Domain Path:/a \* Requires at least: $REQUIRES_AT_LEAST\n/" "$EXTENSION_FILE"
           fi
           CHANGES_MADE=true
 
@@ -78,7 +78,7 @@ jobs:
             sed -i "s#^\s*\* Requires PHP:.*#\* Requires PHP: $REQUIRES_PHP#" "$EXTENSION_FILE"
           else
             echo "Adding missing 'Requires PHP' header."
-            sed -i "1s/^/\* Requires PHP: $REQUIRES_PHP\n/" "$EXTENSION_FILE"
+            sed -i "/^\s*\* Domain Path:/a \* Requires PHP: $REQUIRES_PHP\n/" "$EXTENSION_FILE"
           fi
           CHANGES_MADE=true
 
@@ -88,7 +88,7 @@ jobs:
             sed -i "s#^\s*\* WC requires at least:.*#\* WC requires at least: $LATEST_MINOR_RELEASE#" "$EXTENSION_FILE"
           else
             echo "Adding missing 'WC requires at least' header."
-            sed -i "1s/^/\* WC requires at least: $LATEST_MINOR_RELEASE\n/" "$EXTENSION_FILE"
+            sed -i "/^\s*\* Domain Path:/a \* WC requires at least: $LATEST_MINOR_RELEASE\n/" "$EXTENSION_FILE"
           fi
           CHANGES_MADE=true
 
