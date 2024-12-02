@@ -47,7 +47,7 @@ jobs:
           echo "woocommerce/" >> .gitignore
           echo "woocommerce.zip" >> .gitignore
           git add .gitignore
-          git commit -m "Add .gitignore to exclude unnecessary files" || echo "No changes to commit"
+          git commit -m "Add .gitignore to exclude unnecessary files"
 
       # Step 7: Checkout Base Branch
       - name: Checkout Base Branch
@@ -71,41 +71,59 @@ jobs:
           EXTENSION_FILE="woocommerce-zatca-invoices.php"
           CHANGES_MADE=false
 
-          echo "File content before updates:"
-          cat "$EXTENSION_FILE"
-
+          # Extract values from WooCommerce core
           REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$WC_CORE_FILE")
           REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$WC_CORE_FILE")
+          LATEST_MINOR_RELEASE=$(echo "$LATEST_RELEASE" | grep -oE '^[0-9]+\.[0-9]+' | awk -F. '{printf("%d.%d", $1, $2-2 < 0 ? 0 : $2-2)}')
 
+          # Check for missing headers and add them if needed
+          if ! grep -q "^\* Requires at least:" "$EXTENSION_FILE"; then
+            echo "Adding missing 'Requires at least' header."
+            sed -i "1s/^/\* Requires at least: $REQUIRES_AT_LEAST\n/" "$EXTENSION_FILE"
+            CHANGES_MADE=true
+          fi
+
+          if ! grep -q "^\* Requires PHP:" "$EXTENSION_FILE"; then
+            echo "Adding missing 'Requires PHP' header."
+            sed -i "1s/^/\* Requires PHP: $REQUIRES_PHP\n/" "$EXTENSION_FILE"
+            CHANGES_MADE=true
+          fi
+
+          if ! grep -q "^\* WC requires at least:" "$EXTENSION_FILE"; then
+            echo "Adding missing 'WC requires at least' header."
+            sed -i "1s/^/\* WC requires at least: $LATEST_MINOR_RELEASE\n/" "$EXTENSION_FILE"
+            CHANGES_MADE=true
+          fi
+
+          # Compare and update existing headers
           CURRENT_REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$EXTENSION_FILE" || echo "")
           CURRENT_REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$EXTENSION_FILE" || echo "")
           WC_REQUIRES_AT_LEAST=$(grep -oP 'WC requires at least: \K[\d.]+' "$EXTENSION_FILE" || echo "")
 
-          echo "Extracted headers from WooCommerce core:"
-          echo "  Requires at least: $REQUIRES_AT_LEAST"
-          echo "  Requires PHP: $REQUIRES_PHP"
-
-          echo "Extracted headers from extension file:"
-          echo "  Requires at least: $CURRENT_REQUIRES_AT_LEAST"
-          echo "  Requires PHP: $CURRENT_REQUIRES_PHP"
-          echo "  WC requires at least: $WC_REQUIRES_AT_LEAST"
-
-          if [ "$CURRENT_REQUIRES_AT_LEAST" != "$REQUIRES_AT_LEAST" ] || [ "$CURRENT_REQUIRES_PHP" != "$REQUIRES_PHP" ] || [ "$WC_REQUIRES_AT_LEAST" != "$LATEST_MINOR_RELEASE" ]; then
-            echo "Headers are outdated. Updating..."
+          if [ "$CURRENT_REQUIRES_AT_LEAST" != "$REQUIRES_AT_LEAST" ]; then
+            echo "Updating 'Requires at least' header."
             sed -i "s#\* Requires at least: .*#* Requires at least: $REQUIRES_AT_LEAST#" "$EXTENSION_FILE"
-            sed -i "s#\* Requires PHP: .*#* Requires PHP: $REQUIRES_PHP#" "$EXTENSION_FILE"
-            sed -i "s#\* WC requires at least: .*#* WC requires at least: $LATEST_MINOR_RELEASE#" "$EXTENSION_FILE"                                    
-          
-                                     echo "File content after updates:"
-            cat "$EXTENSION_FILE"
-
             CHANGES_MADE=true
-          else
-            echo "Headers are already up to date. No changes needed."
           fi
 
-          echo "REQUIRES_AT_LEAST=$REQUIRES_AT_LEAST" >> $GITHUB_ENV
-          echo "REQUIRES_PHP=$REQUIRES_PHP" >> $GITHUB_ENV
+          if [ "$CURRENT_REQUIRES_PHP" != "$REQUIRES_PHP" ]; then
+            echo "Updating 'Requires PHP' header."
+            sed -i "s#\* Requires PHP: .*#* Requires PHP: $REQUIRES_PHP#" "$EXTENSION_FILE"
+            CHANGES_MADE=true
+          fi
+
+          if [ "$WC_REQUIRES_AT_LEAST" != "$LATEST_MINOR_RELEASE" ]; then
+            echo "Updating 'WC requires at least' header."
+            sed -i "s#\* WC requires at least: .*#* WC requires at least: $LATEST_MINOR_RELEASE#" "$EXTENSION_FILE"
+            CHANGES_MADE=true
+          fi
+
+          # Commit changes if any
+          if [ "$CHANGES_MADE" = true ]; then
+            git add "$EXTENSION_FILE"
+            git commit -m "Update Requires headers to match WooCommerce $LATEST_RELEASE" || echo "No changes to commit"
+          fi
+
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
       # Step 6: Clean Untracked Files
