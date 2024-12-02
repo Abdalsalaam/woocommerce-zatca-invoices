@@ -24,7 +24,6 @@ jobs:
           curl -L -o woocommerce.zip "https://github.com/woocommerce/woocommerce/releases/download/$LATEST_RELEASE/woocommerce.zip"
 
           # Unzip WooCommerce release
-          mkdir -p woocommerce
           unzip -q woocommerce.zip
 
           # Extract minor version for WC requires at least
