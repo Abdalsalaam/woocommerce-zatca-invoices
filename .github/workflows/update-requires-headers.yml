@@ -15,21 +15,27 @@ jobs:
         uses: actions/checkout@v3
 
       # Step 2: Fetch the latest WooCommerce release
+      # Step 2: Fetch and Extract Latest WooCommerce Release
       - name: Fetch Latest WooCommerce Release
         id: fetch_wc_release
         run: |
-          # Get the latest release version
+          # Download the latest WooCommerce release
           LATEST_RELEASE=$(curl -s https://api.github.com/repos/woocommerce/woocommerce/releases/latest | jq -r '.tag_name')
+          curl -L -o woocommerce.zip "https://github.com/woocommerce/woocommerce/releases/download/$LATEST_RELEASE/woocommerce.zip"
+
+          # Unzip WooCommerce release
+          mkdir -p woocommerce
+          unzip -q woocommerce.zip
+
+          # Extract minor version for WC requires at least
           MAJOR_VERSION=$(echo "$LATEST_RELEASE" | grep -oE '^[0-9]+')
           MINOR_VERSION=$(echo "$LATEST_RELEASE" | grep -oE '^[0-9]+\.[0-9]+' | cut -d. -f2)
           ADJUSTED_MINOR_VERSION=$((MINOR_VERSION - 2))
 
-          # Handle edge case: minor version < 0
           if [ "$ADJUSTED_MINOR_VERSION" -lt 0 ]; then
             ADJUSTED_MINOR_VERSION=0
           fi
 
-          # Create the adjusted version
           LATEST_MINOR_RELEASE="$MAJOR_VERSION.$ADJUSTED_MINOR_VERSION"
 
           echo "Latest WooCommerce Release: $LATEST_RELEASE"
