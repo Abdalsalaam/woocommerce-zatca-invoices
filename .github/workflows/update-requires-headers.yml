@@ -62,24 +62,21 @@ jobs:
           REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$WC_CORE_FILE")
           LATEST_MINOR_RELEASE=$(echo "$LATEST_RELEASE" | grep -oE '^[0-9]+\.[0-9]+' | awk -F. '{printf("%d.%d", $1, $2-2 < 0 ? 0 : $2-2)}')
 
-          # Normalize and check for missing headers
-          if ! grep -qE "^\s*\* Requires at least: $REQUIRES_AT_LEAST\s*$" "$EXTENSION_FILE"; then
-            echo "Adding or updating 'Requires at least' header."
-            sed -i "/^\s*\* Requires at least:/d" "$EXTENSION_FILE" # Remove existing entry
+          # Check for missing headers and add them if needed
+          if ! grep -qE "^\s*\* Requires at least:\s*"; then
+            echo "Adding missing 'Requires at least' header."
             sed -i "1s/^/\* Requires at least: $REQUIRES_AT_LEAST\n/" "$EXTENSION_FILE"
             CHANGES_MADE=true
           fi
 
-          if ! grep -qE "^\s*\* Requires PHP: $REQUIRES_PHP\s*$" "$EXTENSION_FILE"; then
-            echo "Adding or updating 'Requires PHP' header."
-            sed -i "/^\s*\* Requires PHP:/d" "$EXTENSION_FILE" # Remove existing entry
+          if ! grep -qE "^\s*\* Requires PHP:\s*"; then
+            echo "Adding missing 'Requires PHP' header."
             sed -i "1s/^/\* Requires PHP: $REQUIRES_PHP\n/" "$EXTENSION_FILE"
             CHANGES_MADE=true
           fi
 
-          if ! grep -qE "^\s*\* WC requires at least: $LATEST_MINOR_RELEASE\s*$" "$EXTENSION_FILE"; then
-            echo "Adding or updating 'WC requires at least' header."
-            sed -i "/^\s*\* WC requires at least:/d" "$EXTENSION_FILE" # Remove existing entry
+          if ! grep -qE "^\s*\* WC requires at least:\s*"; then
+            echo "Adding missing 'WC requires at least' header."
             sed -i "1s/^/\* WC requires at least: $LATEST_MINOR_RELEASE\n/" "$EXTENSION_FILE"
             CHANGES_MADE=true
           fi
