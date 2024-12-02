@@ -63,19 +63,19 @@ jobs:
           LATEST_MINOR_RELEASE=$(echo "$LATEST_RELEASE" | grep -oE '^[0-9]+\.[0-9]+' | awk -F. '{printf("%d.%d", $1, $2-2 < 0 ? 0 : $2-2)}')
 
           # Check for missing headers and add them if needed
-          if ! grep -Fxq "^\* Requires at least:"; then
+          if ! grep -qE "^\s*\* Requires at least:"; then
             echo "Adding missing 'Requires at least' header."
             sed -i "1s/^/\* Requires at least: $REQUIRES_AT_LEAST\n/" "$EXTENSION_FILE"
             CHANGES_MADE=true
           fi
 
-          if ! grep -Fxq "^\* Requires PHP:"; then
+          if ! grep -qE "^\s*\* Requires PHP:"; then
             echo "Adding missing 'Requires PHP' header."
             sed -i "1s/^/\* Requires PHP: $REQUIRES_PHP\n/" "$EXTENSION_FILE"
             CHANGES_MADE=true
           fi
 
-          if ! grep -Fxq "^\* WC requires at least:"; then
+          if ! grep -qE "^\s*\* WC requires at least:"; then
             echo "Adding missing 'WC requires at least' header."
             sed -i "1s/^/\* WC requires at least: $LATEST_MINOR_RELEASE\n/" "$EXTENSION_FILE"
             CHANGES_MADE=true
