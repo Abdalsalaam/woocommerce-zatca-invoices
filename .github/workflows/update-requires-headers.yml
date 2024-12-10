@@ -111,11 +111,13 @@ jobs:
       # Step 6: Create Pull Request
       - name: Create Pull Request
         if: env.CHANGES_MADE == 'true'
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7.0.5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ env.BRANCH_NAME }}
           base: main
+          add-paths: |
+            woocommerce-zatca-invoices.php
           commit-message: "Update Requires headers"
           title: "Update Requires headers for WooCommerce compatibility"
           reviewers: abdalsalaam
