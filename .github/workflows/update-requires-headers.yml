@@ -5,6 +5,10 @@ on:
     - cron: '0 0 * * 5' # Run every Friday at midnight UTC
   workflow_dispatch: # Allow manual trigger
 
+env:
+  PLUGIN_FILE_NAME: "woocommerce-zatca-invoices.php"
+  MAIN_BRANCH: "main"
+
 jobs:
   update-headers:
     runs-on: ubuntu-latest
@@ -54,7 +58,7 @@ jobs:
         id: compare_and_update
         run: |
           WC_CORE_FILE="woocommerce/woocommerce.php"
-          EXTENSION_FILE="woocommerce-zatca-invoices.php"
+          EXTENSION_FILE=${{ env.PLUGIN_FILE_NAME }}
           CHANGES_MADE=false
 
           REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$WC_CORE_FILE")
@@ -115,9 +119,9 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ env.BRANCH_NAME }}
-          base: main
+          base: ${{ env.MAIN_BRANCH }}
           add-paths: |
-            woocommerce-zatca-invoices.php
+            ${{ env.PLUGIN_FILE_NAME }}
           commit-message: "Update Requires headers"
           title: "Update Requires headers for WooCommerce compatibility"
           reviewers: abdalsalaam
