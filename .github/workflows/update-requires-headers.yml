@@ -155,6 +155,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ env.BRANCH_NAME }}
           base: ${{ env.MAIN_BRANCH }}
+          add-paths: |
+            ${{ env.PLUGIN_FILE_NAME }}
+            readme.txt
           commit-message: "Update Requires headers"
           title: "Update Requires headers for WooCommerce compatibility"
           reviewers: abdalsalaam
