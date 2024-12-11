@@ -129,6 +129,7 @@ jobs:
 
             CHANGES_MADE=true
             echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
+            cat "$README_FILE"
           else
             echo "$README_FILE does not exist. Skipping."
           fi
