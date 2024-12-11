@@ -67,7 +67,6 @@ jobs:
           echo "REQUIRES_AT_LEAST=$REQUIRES_AT_LEAST" >> $GITHUB_ENV
           echo "REQUIRES_PHP=$REQUIRES_PHP" >> $GITHUB_ENV
 
-                    # Check and update or add the 'Requires at least' header
           if grep -qE "^\s*\* Requires at least:" "$EXTENSION_FILE"; then
             echo "Updating 'Requires at least' header."
             sed -i "s#^\s*\* Requires at least:.*# \* Requires at least: $REQUIRES_AT_LEAST#" "$EXTENSION_FILE"
@@ -129,6 +128,7 @@ jobs:
             fi
 
             CHANGES_MADE=true
+            echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
           else
             echo "$README_FILE does not exist. Skipping."
           fi
