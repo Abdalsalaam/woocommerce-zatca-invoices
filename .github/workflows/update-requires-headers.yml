@@ -111,21 +111,21 @@ jobs:
             if grep -qE "^Requires at least:" "$README_FILE"; then
               sed -i "s#^Requires at least:.*#Requires at least: $REQUIRES_AT_LEAST#" "$README_FILE"
             else
-              sed -i "/^Tags:/a Requires at least: $REQUIRES_AT_LEAST" "$README_FILE"
+              sed -i "/^Stable tag:/i Requires at least: $REQUIRES_AT_LEAST" "$README_FILE"
             fi
 
             # Check and update or add the 'Requires PHP' header
             if grep -qE "^Requires PHP:" "$README_FILE"; then
               sed -i "s#^Requires PHP:.*#Requires PHP: $REQUIRES_PHP#" "$README_FILE"
             else
-              sed -i "/^Tags:/a Requires PHP: $REQUIRES_PHP" "$README_FILE"
+              sed -i "/^Stable tag:/i Requires PHP: $REQUIRES_PHP" "$README_FILE"
             fi
 
             # Check and update or add the 'WC requires at least' header
             if grep -qE "^WC requires at least:" "$README_FILE"; then
               sed -i "s#^WC requires at least:.*#WC requires at least: $LATEST_MINOR_RELEASE#" "$README_FILE"
             else
-              sed -i "/^Tags:/a WC requires at least: $LATEST_MINOR_RELEASE" "$README_FILE"
+              sed -i "/^Stable tag:/i WC requires at least: $LATEST_MINOR_RELEASE" "$README_FILE"
             fi
 
             CHANGES_MADE=true
