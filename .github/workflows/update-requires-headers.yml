@@ -99,6 +99,40 @@ jobs:
 
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
+
+      - name: Compare and Update Headers in README File
+        run: |
+          README_FILE="readme.txt"
+
+          if [ -f "$README_FILE" ]; then
+            echo "Found $README_FILE. Updating headers..."
+
+            # Check and update or add the 'Requires at least' header
+            if grep -qE "^Requires at least:" "$README_FILE"; then
+              sed -i "s#^Requires at least:.*#Requires at least: $REQUIRES_AT_LEAST#" "$README_FILE"
+            else
+              sed -i "/^Tags:/a Requires at least: $REQUIRES_AT_LEAST" "$README_FILE"
+            fi
+
+            # Check and update or add the 'Requires PHP' header
+            if grep -qE "^Requires PHP:" "$README_FILE"; then
+              sed -i "s#^Requires PHP:.*#Requires PHP: $REQUIRES_PHP#" "$README_FILE"
+            else
+              sed -i "/^Tags:/a Requires PHP: $REQUIRES_PHP" "$README_FILE"
+            fi
+
+            # Check and update or add the 'WC requires at least' header
+            if grep -qE "^WC requires at least:" "$README_FILE"; then
+              sed -i "s#^WC requires at least:.*#WC requires at least: $LATEST_MINOR_RELEASE#" "$README_FILE"
+            else
+              sed -i "/^Tags:/a WC requires at least: $LATEST_MINOR_RELEASE" "$README_FILE"
+            fi
+
+            CHANGES_MADE=true
+          else
+            echo "$README_FILE does not exist. Skipping."
+          fi
+
       # Step 5: Ignore Unwanted Files
       - name: Ignore Unwanted Files
         run: |
@@ -122,6 +156,7 @@ jobs:
           base: ${{ env.MAIN_BRANCH }}
           add-paths: |
             ${{ env.PLUGIN_FILE_NAME }}
+            "readme.txt"
           commit-message: "Update Requires headers"
           title: "Update Requires headers for WooCommerce compatibility"
           reviewers: abdalsalaam
