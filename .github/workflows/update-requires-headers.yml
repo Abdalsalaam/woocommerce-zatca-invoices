@@ -102,11 +102,9 @@ jobs:
       - name: Compare and Update Headers in README File
         run: |
           README_FILE="readme.txt"
-          FILE_LIST="${{ env.PLUGIN_FILE_NAME }}"
+          echo "${{ env.PLUGIN_FILE_NAME }}" > file_list.txt
           if [ -f "$README_FILE" ]; then
-            FILE_LIST="$FILE_LIST\n$README_FILE"
-
-            echo "File list : $FILE_LIST"
+            echo "$README_FILE" >> file_list.txt
             echo "Found $README_FILE. Updating headers..."
 
             # Check and update or add the 'Requires at least' header
@@ -160,7 +158,7 @@ jobs:
           branch: ${{ env.BRANCH_NAME }}
           base: ${{ env.MAIN_BRANCH }}
           add-paths: |
-            ${{ env.FILE_LIST }}
+            $(cat file_list.txt)
           commit-message: "Update Requires headers"
           title: "Update Requires headers for WooCommerce compatibility"
           reviewers: abdalsalaam
