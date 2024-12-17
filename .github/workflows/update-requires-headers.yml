@@ -2,7 +2,7 @@ name: Update Requires Headers
 
 on:
   schedule:
-    - cron: '0 0 * * 5' # Run every Friday at midnight UTC
+    - cron: '0 0 * * *' # Run every day at midnight UTC
   workflow_dispatch: # Allow manual trigger
 
 env:
@@ -102,8 +102,9 @@ jobs:
       - name: Compare and Update Headers in README File
         run: |
           README_FILE="readme.txt"
-
+          FILE_LIST="${{ env.PLUGIN_FILE_NAME }}"
           if [ -f "$README_FILE" ]; then
+            FILE_LIST="$FILE_LIST readme.txt"
             echo "Found $README_FILE. Updating headers..."
 
             # Check and update or add the 'Requires at least' header
@@ -133,6 +134,7 @@ jobs:
           else
             echo "$README_FILE does not exist. Skipping."
           fi
+          echo "FILE_LIST=$FILE_LIST" >> $GITHUB_ENV
 
       # Step 5: Ignore Unwanted Files
       - name: Ignore Unwanted Files
@@ -156,8 +158,7 @@ jobs:
           branch: ${{ env.BRANCH_NAME }}
           base: ${{ env.MAIN_BRANCH }}
           add-paths: |
-            ${{ env.PLUGIN_FILE_NAME }}
-            readme.txt
+            ${{ env.FILE_LIST }}
           commit-message: "Update Requires headers"
           title: "Update Requires headers for WooCommerce compatibility"
           reviewers: abdalsalaam
