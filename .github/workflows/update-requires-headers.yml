@@ -104,7 +104,7 @@ jobs:
           README_FILE="readme.txt"
           FILE_LIST="${{ env.PLUGIN_FILE_NAME }}"
           if [ -f "$README_FILE" ]; then
-            FILE_LIST="$FILE_LIST readme.txt"
+            FILE_LIST="$FILE_LIST\nreadme.txt"
             echo "Found $README_FILE. Updating headers..."
 
             # Check and update or add the 'Requires at least' header
