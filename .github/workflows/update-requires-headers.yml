@@ -104,8 +104,7 @@ jobs:
           README_FILE="readme.txt"
           FILE_LIST="${{ env.PLUGIN_FILE_NAME }}"
           if [ -f "$README_FILE" ]; then
-            FILE_LIST="$FILE_LIST
-            $README_FILE"
+            FILE_LIST="$FILE_LIST\n$README_FILE"
 
             echo "File list : $FILE_LIST"
             echo "Found $README_FILE. Updating headers..."
