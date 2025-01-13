@@ -8,7 +8,7 @@ on:
 env:
   PLUGIN_FILE_NAME: "woocommerce-zatca-invoices.php"
   MAIN_BRANCH: "main"
-  FILES_TO_CHECK: ${{PLUGIN_FILE_NAME}}
+  FILES_TO_CHECK: ${{env.PLUGIN_FILE_NAME}}
 
 jobs:
   update-headers:
