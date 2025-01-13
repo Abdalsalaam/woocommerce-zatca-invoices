@@ -95,16 +95,14 @@ jobs:
             sed -i "/^\s*\* Version:/a \\ \\* WC requires at least: $LATEST_MINOR_RELEASE" "$EXTENSION_FILE"
           fi
           CHANGES_MADE=true
-
           echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
 
       - name: Compare and Update Headers in README File
         run: |
           README_FILE="readme.txt"
-          echo "${{ env.PLUGIN_FILE_NAME }}" > file_list.txt
+
           if [ -f "$README_FILE" ]; then
-            echo "$README_FILE" >> file_list.txt
             echo "Found $README_FILE. Updating headers..."
 
             # Check and update or add the 'Requires at least' header
@@ -130,17 +128,14 @@ jobs:
 
             CHANGES_MADE=true
             echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
-            cat "$README_FILE"
-          else
-            echo "$README_FILE does not exist. Skipping."
           fi
-          echo "FILE_LIST=$FILE_LIST" >> $GITHUB_ENV
 
       # Step 5: Ignore Unwanted Files
       - name: Ignore Unwanted Files
         run: |
           echo "woocommerce/" >> .gitignore
           echo "woocommerce.zip" >> .gitignore
+          git clean -fdx
 
       # Step 5: Push Branch
       - name: Push Branch
@@ -156,11 +151,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ env.BRANCH_NAME }}
           base: ${{ env.MAIN_BRANCH }}
-          add-paths: |
-            $(cat file_list.txt)
+          add-paths: ${{ env.PLUGIN_FILE_NAME }}, readme.txt
           commit-message: "Update Requires headers"
           title: "Update Requires headers for WooCommerce compatibility"
-          reviewers: abdalsalaam
+          reviewers: woocommerce/progressus, woocommerce/escargot
           body: |
             This PR updates the following headers to ensure compatibility with the latest WooCommerce release:
             - `Requires at least`: ${{ env.REQUIRES_AT_LEAST }}
