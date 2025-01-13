@@ -8,6 +8,7 @@ on:
 env:
   PLUGIN_FILE_NAME: "woocommerce-zatca-invoices.php"
   MAIN_BRANCH: "main"
+  FILES_TO_CHECK: ${{PLUGIN_FILE_NAME}}
 
 jobs:
   update-headers:
@@ -128,6 +129,7 @@ jobs:
 
             CHANGES_MADE=true
             echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
+            echo "FILES_TO_CHECK=${{ env.PLUGIN_FILE_NAME }},readme.txt" >> $GITHUB_ENV
           fi
 
       # Step 5: Ignore Unwanted Files
@@ -151,7 +153,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ env.BRANCH_NAME }}
           base: ${{ env.MAIN_BRANCH }}
-          add-paths: ${{ env.PLUGIN_FILE_NAME }}, readme.txt
+          add-paths: ${{ env.FILES_TO_CHECK }}
           commit-message: "Update Requires headers"
           title: "Update Requires headers for WooCommerce compatibility"
           reviewers: abdalsalaam
