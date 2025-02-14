@@ -88,43 +88,72 @@ jobs:
           EXTENSION_FILE=${{ env.PLUGIN_FILE_NAME }}
           CHANGES_MADE=false
 
+          # Get required versions from WooCommerce core
           REQUIRES_AT_LEAST=$(grep -oP 'Requires at least: \K[\d.]+' "$WC_CORE_FILE")
           REQUIRES_PHP=$(grep -oP 'Requires PHP: \K[\d.]+' "$WC_CORE_FILE")
-          LATEST_MINOR_RELEASE=$(echo "$LATEST_RELEASE" | grep -oE '^[0-9]+\.[0-9]+' | awk -F. '{printf("%d.%d", $1, $2-2 < 0 ? 0 : $2-2)}')
+          LATEST_MINOR_RELEASE=$(echo "$LATEST_RELEASE" | grep -oE '^[0-9]+\.[0-9]+' | awk -F. '{printf("%d.%d", $1, ($2-2 < 0 ? 0 : $2-2))}')
           echo "REQUIRES_AT_LEAST=$REQUIRES_AT_LEAST" >> $GITHUB_ENV
           echo "REQUIRES_PHP=$REQUIRES_PHP" >> $GITHUB_ENV
 
+          # -------------------------------
+          # Compare and update 'Requires at least'
+          # -------------------------------
           if grep -qE "^\s*\* Requires at least:" "$EXTENSION_FILE"; then
-            echo "Updating 'Requires at least' header."
-            sed -i "s#^\s*\* Requires at least:.*# \* Requires at least: $REQUIRES_AT_LEAST#" "$EXTENSION_FILE"
+            current_req=$(grep -oP '^\s*\* Requires at least:\s*\K[\d.]+' "$EXTENSION_FILE")
+            echo "Current 'Requires at least' header: $current_req"
+            if [ "$(printf "%s\n%s" "$current_req" "$REQUIRES_AT_LEAST" | sort -V | head -n1)" = "$current_req" ] && [ "$current_req" != "$REQUIRES_AT_LEAST" ]; then
+              echo "Updating 'Requires at least' header from $current_req to $REQUIRES_AT_LEAST"
+              sed -i "s#^\s*\* Requires at least:.*# * Requires at least: $REQUIRES_AT_LEAST#" "$EXTENSION_FILE"
+              CHANGES_MADE=true
+            else
+              echo "Current 'Requires at least' ($current_req) is greater than or equal to required ($REQUIRES_AT_LEAST); not updating."
+            fi
           else
             echo "Adding missing 'Requires at least' header."
             sed -i "/^\s*\* Version:/a \\ \\* Requires at least: $REQUIRES_AT_LEAST" "$EXTENSION_FILE"
+            CHANGES_MADE=true
           fi
-          CHANGES_MADE=true
 
-          # Check and update or add the 'Requires PHP' header
+          # -------------------------------
+          # Compare and update 'Requires PHP'
+          # -------------------------------
           if grep -qE "^\s*\* Requires PHP:" "$EXTENSION_FILE"; then
-            echo "Updating 'Requires PHP' header."
-            sed -i "s#^\s*\* Requires PHP:.*# \* Requires PHP: $REQUIRES_PHP#" "$EXTENSION_FILE"
+            current_php=$(grep -oP '^\s*\* Requires PHP:\s*\K[\d.]+' "$EXTENSION_FILE")
+            echo "Current 'Requires PHP' header: $current_php"
+            if [ "$(printf "%s\n%s" "$current_php" "$REQUIRES_PHP" | sort -V | head -n1)" = "$current_php" ] && [ "$current_php" != "$REQUIRES_PHP" ]; then
+              echo "Updating 'Requires PHP' header from $current_php to $REQUIRES_PHP"
+              sed -i "s#^\s*\* Requires PHP:.*# * Requires PHP: $REQUIRES_PHP#" "$EXTENSION_FILE"
+              CHANGES_MADE=true
+            else
+              echo "Current 'Requires PHP' ($current_php) is greater than or equal to required ($REQUIRES_PHP); not updating."
+            fi
           else
             echo "Adding missing 'Requires PHP' header."
             sed -i "/^\s*\* Version:/a \\ \\* Requires PHP: $REQUIRES_PHP" "$EXTENSION_FILE"
+            CHANGES_MADE=true
           fi
-          CHANGES_MADE=true
 
-          # Check and update or add the 'WC requires at least' header
+          # -------------------------------
+          # Compare and update 'WC requires at least'
+          # -------------------------------
           if grep -qE "^\s*\* WC requires at least:" "$EXTENSION_FILE"; then
-            echo "Updating 'WC requires at least' header."
-            sed -i "s#^\s*\* WC requires at least:.*# \* WC requires at least: $LATEST_MINOR_RELEASE#" "$EXTENSION_FILE"
+            current_wc=$(grep -oP '^\s*\* WC requires at least:\s*\K[\d.]+' "$EXTENSION_FILE")
+            echo "Current 'WC requires at least' header: $current_wc"
+            if [ "$(printf "%s\n%s" "$current_wc" "$LATEST_MINOR_RELEASE" | sort -V | head -n1)" = "$current_wc" ] && [ "$current_wc" != "$LATEST_MINOR_RELEASE" ]; then
+              echo "Updating 'WC requires at least' header from $current_wc to $LATEST_MINOR_RELEASE"
+              sed -i "s#^\s*\* WC requires at least:.*# * WC requires at least: $LATEST_MINOR_RELEASE#" "$EXTENSION_FILE"
+              CHANGES_MADE=true
+            else
+              echo "Current 'WC requires at least' ($current_wc) is greater than or equal to required ($LATEST_MINOR_RELEASE); not updating."
+            fi
           else
             echo "Adding missing 'WC requires at least' header."
             sed -i "/^\s*\* Version:/a \\ \\* WC requires at least: $LATEST_MINOR_RELEASE" "$EXTENSION_FILE"
+            CHANGES_MADE=true
           fi
-          CHANGES_MADE=true
-          echo "FILES_TO_CHECK=${{ env.PLUGIN_FILE_NAME }}" >> $GITHUB_ENV
-          echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
+          echo "EDITED_FILES=${{ env.PLUGIN_FILE_NAME }}" >> $GITHUB_ENV
+          echo "CHANGES_MADE=$CHANGES_MADE" >> $GITHUB_ENV
 
       - name: Compare and Update Headers in README File
         run: |
