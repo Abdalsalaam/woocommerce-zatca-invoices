@@ -23,8 +23,36 @@ jobs:
         id: fetch_wc_release
         run: |
           # Download the latest WooCommerce release
+          echo "Fetching the latest stable release..."
           LATEST_RELEASE=$(curl -s https://api.github.com/repos/woocommerce/woocommerce/releases/latest | jq -r '.tag_name')
-          curl -L -o woocommerce.zip "https://github.com/woocommerce/woocommerce/releases/download/$LATEST_RELEASE/woocommerce.zip"
+          echo "Stable release: $LATEST_RELEASE"
+      
+          echo "Fetching the latest RC release..."
+          RC_RELEASE=$(curl -s https://api.github.com/repos/woocommerce/woocommerce/releases | jq -r '[.[] | select(.tag_name | ascii_downcase | contains("rc"))] | sort_by(.published_at) | reverse | .[0].tag_name')
+          echo "RC release: $RC_RELEASE"
+      
+          # Default to stable release
+          DOWNLOAD_TAG="$LATEST_RELEASE"
+      
+          if [ -n "$RC_RELEASE" ]; then
+          # Remove any leading "v" to compare version numbers correctly
+          STABLE_VERSION=$(echo "$LATEST_RELEASE" | sed 's/^v//')
+          RC_VERSION=$(echo "$RC_RELEASE" | sed 's/^v//')
+          
+          # Compare versions using sort -V. The highest version will be last.
+          HIGHEST=$(echo -e "$RC_VERSION\n$STABLE_VERSION" | sort -V | tail -n 1)
+          if [ "$HIGHEST" = "$RC_VERSION" ] && [ "$RC_VERSION" != "$STABLE_VERSION" ]; then
+          echo "RC release is newer than stable release."
+          DOWNLOAD_TAG="$RC_RELEASE"
+          else
+          echo "Stable release is newer or equal to RC release."
+          fi
+          else
+          echo "No RC release found."
+          fi
+      
+          echo "Downloading release: $DOWNLOAD_TAG"
+          curl -L -o woocommerce.zip "https://github.com/woocommerce/woocommerce/releases/download/$DOWNLOAD_TAG/woocommerce.zip"
 
           # Unzip WooCommerce release
           unzip -q woocommerce.zip
