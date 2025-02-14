@@ -5,14 +5,14 @@
  * Description: An open-source plugin that belongs to Famcare.app, Allow WooCommerce stores to issue ZATCA QR invoices.
  * Version: 1.0.0
  * WC requires at least: 9.2
- * Requires at least: 6.5
+ * Requires at least: 6.7
  * Author: Abdalsalaam Halawa @ Famcare.app
  * Author URI: https://Famcare.app
  * Text Domain: famcare-zatca
  * Domain Path: /languages/
  * License: MIT
  * License URI: https://opensource.org/licenses/MIT
- * Requires PHP: 7.4
+ * Requires PHP: 7.3
  *
  */
 
